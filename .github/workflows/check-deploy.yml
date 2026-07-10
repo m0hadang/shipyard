@@ -100,9 +100,9 @@ jobs:
       - name: download mdbook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: "0.4.34"
+          mdbook-version: "0.5.4"
 
-      - run: cargo install mdbook-linkcheck
+      - run: cargo install mdbook-linkcheck2
 
       - run: mdbook build -d guide_master
         working-directory: ./guide/master
@@ -261,9 +261,9 @@ jobs:
       - name: download mdbook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: "0.4.34"
+          mdbook-version: "0.5.4"
 
-      - run: cargo install mdbook-linkcheck
+      - run: cargo install mdbook-linkcheck2
 
       - run: mdbook build -d guide_0_11
         working-directory: ./guide/0.11
