@@ -62,7 +62,7 @@ impl<T: Component + Sync> Storage for NonSend<SparseSet<T>> {
         }
     }
     fn try_clone(&self, other_current: TrackingTimestamp) -> Option<SBoxBuilder> {
-        self.clone.map(|clone| {
+        self.clone.as_ref().map(|clone| {
             let mut sparse_set = SparseSet::<T>::new();
 
             sparse_set.is_tracking_insertion = self.is_tracking_insertion;
@@ -72,7 +72,7 @@ impl<T: Component + Sync> Storage for NonSend<SparseSet<T>> {
 
             sparse_set.sparse = self.sparse.clone();
             sparse_set.dense = self.dense.clone();
-            sparse_set.data = self.data.iter().map(clone).collect();
+            sparse_set.data = (clone.clone_storage)(&self.data);
 
             if sparse_set.is_tracking_insertion {
                 sparse_set
@@ -103,7 +103,8 @@ impl<T: Component + Sync> Storage for NonSend<SparseSet<T>> {
                     || NonSend(SparseSet::<T>::new()),
                 );
 
-                let _ = other_sparse_set.insert(to, (clone)(component), other_current);
+                let _ =
+                    other_sparse_set.insert(to, (clone.clone_component)(component), other_current);
             }
         }
     }
@@ -163,7 +164,7 @@ impl<T: Component + Send> Storage for NonSync<SparseSet<T>> {
         }
     }
     fn try_clone(&self, other_current: TrackingTimestamp) -> Option<SBoxBuilder> {
-        self.clone.map(|clone| {
+        self.clone.as_ref().map(|clone| {
             let mut sparse_set = SparseSet::<T>::new();
 
             sparse_set.is_tracking_insertion = self.is_tracking_insertion;
@@ -173,7 +174,7 @@ impl<T: Component + Send> Storage for NonSync<SparseSet<T>> {
 
             sparse_set.sparse = self.sparse.clone();
             sparse_set.dense = self.dense.clone();
-            sparse_set.data = self.data.iter().map(clone).collect();
+            sparse_set.data = (clone.clone_storage)(&self.data);
 
             if sparse_set.is_tracking_insertion {
                 sparse_set
@@ -204,7 +205,8 @@ impl<T: Component + Send> Storage for NonSync<SparseSet<T>> {
                     || NonSync(SparseSet::<T>::new()),
                 );
 
-                let _ = other_sparse_set.insert(to, (clone)(component), other_current);
+                let _ =
+                    other_sparse_set.insert(to, (clone.clone_component)(component), other_current);
             }
         }
     }
@@ -266,7 +268,7 @@ impl<T: Component> Storage for NonSendSync<SparseSet<T>> {
     }
 
     fn try_clone(&self, other_current: TrackingTimestamp) -> Option<SBoxBuilder> {
-        self.clone.map(|clone| {
+        self.clone.as_ref().map(|clone| {
             let mut sparse_set = SparseSet::<T>::new();
 
             sparse_set.is_tracking_insertion = self.is_tracking_insertion;
@@ -276,7 +278,7 @@ impl<T: Component> Storage for NonSendSync<SparseSet<T>> {
 
             sparse_set.sparse = self.sparse.clone();
             sparse_set.dense = self.dense.clone();
-            sparse_set.data = self.data.iter().map(clone).collect();
+            sparse_set.data = (clone.clone_storage)(&self.data);
 
             if sparse_set.is_tracking_insertion {
                 sparse_set
@@ -308,7 +310,8 @@ impl<T: Component> Storage for NonSendSync<SparseSet<T>> {
                         || NonSendSync(SparseSet::<T>::new()),
                     );
 
-                let _ = other_sparse_set.insert(to, (clone)(component), other_current);
+                let _ =
+                    other_sparse_set.insert(to, (clone.clone_component)(component), other_current);
             }
         }
     }

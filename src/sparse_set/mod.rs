@@ -1,5 +1,6 @@
 mod add_component;
 mod bulk_add_entity;
+mod clone;
 mod delete;
 mod drain;
 mod memory_usage;
@@ -31,6 +32,7 @@ use crate::storage::{SBoxBuilder, Storage, StorageId};
 use crate::tracking::{Tracking, TrackingTimestamp};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+use clone::SparseSetCloneFunctions;
 use core::any::type_name;
 use core::mem::size_of;
 use core::{
@@ -67,7 +69,7 @@ pub struct SparseSet<T: Component> {
     on_insertion: Option<Box<dyn FnMut(EntityId, &T) + Send + Sync>>,
     #[allow(clippy::type_complexity)]
     on_removal: Option<Box<dyn FnMut(EntityId, &T) + Send + Sync>>,
-    clone: Option<fn(&T) -> T>,
+    clone: Option<SparseSetCloneFunctions<T>>,
 }
 
 impl<T: fmt::Debug + Component> fmt::Debug for SparseSet<T> {
@@ -771,10 +773,10 @@ impl<T: Ord + Component> SparseSet<T> {
 }
 
 impl<T: Clone + Component> SparseSet<T> {
-    /// Registers the function to clone this component.
+    /// Registers the functions to clone this component and the full storage.
     #[inline]
     pub fn register_clone(&mut self) {
-        self.clone = Some(T::clone)
+        self.clone = Some(SparseSetCloneFunctions::new());
     }
 }
 
@@ -833,12 +835,12 @@ impl<T: Component + Send + Sync> Storage for SparseSet<T> {
     }
 
     fn try_clone(&self, other_current: TrackingTimestamp) -> Option<SBoxBuilder> {
-        self.clone.map(|clone| {
+        self.clone.as_ref().map(|clone| {
             let mut sparse_set = SparseSet::<T>::new();
 
             sparse_set.sparse = self.sparse.clone();
             sparse_set.dense = self.dense.clone();
-            sparse_set.data = self.data.iter().map(clone).collect();
+            sparse_set.data = (clone.clone_storage)(&self.data);
 
             if sparse_set.is_tracking_insertion {
                 sparse_set
@@ -869,7 +871,8 @@ impl<T: Component + Send + Sync> Storage for SparseSet<T> {
                     SparseSet::<T>::new,
                 );
 
-                let _ = other_sparse_set.insert(to, (clone)(component), other_current);
+                let _ =
+                    other_sparse_set.insert(to, (clone.clone_component)(component), other_current);
             }
         }
     }
